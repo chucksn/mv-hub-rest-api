@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require("../model/userModel");
 const bcrypt = require("bcrypt");
 const { isEmpty } = require("validator");
+const mongoose = require("mongoose");
 
 const handleErrors = (err) => {
   let errors = {};
@@ -77,7 +78,7 @@ router.post("/sign-up", (req, res) => {
   user
     .save()
     .then((user) => {
-      res.status(201).json({ message: "Account created", name: user.name });
+      res.status(201).json({ message: "Account created" });
     })
     .catch((err) => {
       const error = handleErrors(err);
@@ -89,15 +90,37 @@ router.post("/sign-up", (req, res) => {
 router.put("/:userId/watchlist", (req, res) => {
   const { userId } = req.params;
   const newWatchlist = req.body;
-  User.findByIdAndUpdate(userId, { $addToSet: { watchlist: newWatchlist } })
-    .then((user) => {
-      if (user) {
-        res.json({ message: "watchlist updated" });
-      } else {
-        throw "user not found";
+  User.updateOne({ _id: userId }, { $push: { watchlist: newWatchlist } })
+    .then((result) => {
+      if (result.modifiedCount) {
+        res.json({ message: "New item added to watchlist" });
       }
+      if (!result.matchedCount) throw "User does not exist";
     })
-    .catch((err) => res.status(400).json({ err }));
+    .catch((err) => res.status(400).json({ error: err }));
+});
+
+//delete watchlist end-point
+router.delete("/:userId/watchlist/:watchlistId", (req, res) => {
+  const { userId, watchlistId } = req.params;
+  User.findOne({ _id: userId, "watchlist._id": watchlistId })
+    .then((result) => {
+      if (!result) {
+        throw "watchlist item does not exist";
+      }
+      return User.updateOne(
+        { _id: userId },
+        { $pull: { watchlist: { _id: watchlistId } } }
+      )
+        .then((result) => {
+          if (result.modifiedCount) {
+            res.json({ message: "Item deleted from watchlist" });
+          }
+          if (!result.matchedCount) throw "User does not exist";
+        })
+        .catch((err) => res.status(400).json({ error: err }));
+    })
+    .catch((err) => res.status(400).json({ error: err }));
 });
 
 module.exports = router;

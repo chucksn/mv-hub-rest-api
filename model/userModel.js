@@ -3,7 +3,10 @@ const Schema = mongoose.Schema;
 const { isEmail } = require("validator");
 const bcrypt = require("bcrypt");
 
-const WatchlistItemSchema = new mongoose.Schema({}, { strict: false });
+const WatchlistItemSchema = new mongoose.Schema(
+  {},
+  { strict: false, timestamps: true }
+);
 
 const userSchema = new Schema(
   {
