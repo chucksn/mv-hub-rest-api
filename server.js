@@ -4,16 +4,13 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const app = express();
 const port = process.env.PORT;
-const host = process.env.HOST;
 const userSignInRoute = require("./routes/user-signIn-route");
 
 mongoose
   .connect(process.env.DB_URI)
   .then(() => {
     console.log("connected to db");
-    app.listen(port, host, () =>
-      console.log(`server listening at port ${port}`)
-    );
+    app.listen(port, () => console.log(`server listening at port ${port}`));
   })
   .catch((err) => console.log("error connecting to db", err));
 
