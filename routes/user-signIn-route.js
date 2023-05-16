@@ -29,13 +29,13 @@ const handleErrors = (err) => {
 };
 
 //user login end-point
-router.post("/login", (req, res) => {
+router.post("/auth/login", (req, res) => {
   const { username, password } = req.body;
   try {
     if (isEmpty(username)) {
-      throw "Invalid Username";
+      throw "Username required";
     } else if (isEmpty(password)) {
-      throw "Invalid Password";
+      throw "Password required";
     } else {
       User.findOne({ username: username })
         .then((user) => {
@@ -44,30 +44,29 @@ router.post("/login", (req, res) => {
               .compare(password, user.password)
               .then((result) => {
                 if (result) {
-                  res.json({
+                  res.status(200).json({
                     id: user._id,
                     name: user.name,
                     email: user.email,
-                    watchlist: user.watchlist,
                   });
                 } else {
                   throw "Incorrect Username or Password";
                 }
               })
-              .catch((error) => res.json({ error }));
+              .catch((error) => res.status(400).json({ error }));
           } else {
             throw "Incorrect Username or Password ";
           }
         })
-        .catch((err) => res.json({ err }));
+        .catch((error) => res.status(400).json({ error }));
     }
   } catch (error) {
-    res.json({ error });
+    res.status(400).json({ error });
   }
 });
 
 //user sign-up end-point
-router.post("/sign-up", (req, res) => {
+router.post("/auth/sign-up", (req, res) => {
   const { name, email, username, password } = req.body;
   const user = new User({
     email,
@@ -77,7 +76,7 @@ router.post("/sign-up", (req, res) => {
   });
   user
     .save()
-    .then((user) => {
+    .then(() => {
       res.status(201).json({ message: "Account created" });
     })
     .catch((err) => {
@@ -86,31 +85,54 @@ router.post("/sign-up", (req, res) => {
     });
 });
 
+//get watchlist end-point
+router.get("/:userID/watchlist", (req, res) => {
+  const { userID } = req.params;
+
+  User.findById(userID)
+    .then((user) => {
+      if (!user) res.status(404).json({ error: "User not found" });
+      const watchlist = user.watchlist;
+      res.json({ watchlist });
+    })
+    .catch((error) => res.status(500).json({ error }));
+});
+
 //update watchlist end-point
 router.put("/:userId/watchlist", (req, res) => {
   const { userId } = req.params;
   const newWatchlist = req.body;
-  User.updateOne({ _id: userId }, { $push: { watchlist: newWatchlist } })
-    .then((result) => {
-      if (result.modifiedCount) {
-        res.json({ message: "New item added to watchlist" });
+  const newWatchlist_id = newWatchlist.id;
+  User.findOne({ _id: userId, "watchlist.id": newWatchlist_id })
+    .then((watchlist_id) => {
+      if (watchlist_id) {
+        throw "Already added to watchlist";
+      } else {
+        User.updateOne({ _id: userId }, { $push: { watchlist: newWatchlist } })
+          .then((result) => {
+            if (result.modifiedCount) {
+              res.json({ message: "New item added to watchlist" });
+            }
+            if (!result.matchedCount) throw "User does not exist";
+          })
+          .catch((err) => res.status(400).json({ error: err }));
       }
-      if (!result.matchedCount) throw "User does not exist";
     })
-    .catch((err) => res.status(400).json({ error: err }));
+    .catch((error) => res.status(400).json({ error }));
 });
 
 //delete watchlist end-point
 router.delete("/:userId/watchlist/:watchlistId", (req, res) => {
   const { userId, watchlistId } = req.params;
-  User.findOne({ _id: userId, "watchlist._id": watchlistId })
+
+  User.findOne({ _id: userId, "watchlist.id": Number(watchlistId) })
     .then((result) => {
       if (!result) {
         throw "watchlist item does not exist";
       }
       return User.updateOne(
         { _id: userId },
-        { $pull: { watchlist: { _id: watchlistId } } }
+        { $pull: { watchlist: { id: Number(watchlistId) } } }
       )
         .then((result) => {
           if (result.modifiedCount) {
@@ -121,6 +143,17 @@ router.delete("/:userId/watchlist/:watchlistId", (req, res) => {
         .catch((err) => res.status(400).json({ error: err }));
     })
     .catch((err) => res.status(400).json({ error: err }));
+});
+
+//delete user end-point
+router.delete("/:userID", (req, res) => {
+  const { userID } = req.params;
+  User.findByIdAndDelete(userID)
+    .then((user) => {
+      if (!user) throw "User not found";
+      res.status(200).json({ message: "Account deleted" });
+    })
+    .catch((error) => res.status(404).json({ error }));
 });
 
 module.exports = router;

@@ -33,7 +33,7 @@ const userSchema = new Schema(
       required: [true, "Password is required"],
       minLength: [8, "Minimum password length is 8 characters"],
     },
-    watchlist: [WatchlistItemSchema],
+    watchlist: [Schema.Types.Mixed],
   },
   { timestamps: true }
 );
