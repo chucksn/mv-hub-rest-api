@@ -27,7 +27,7 @@ jobs:
 
       - name: Set environment variables
         run: |
-          echo "API_KEY=${{ secrets.DB_URI }}" >> .env
+          echo "DB_URI=${{ secrets.DB_URI }}" >> .env
 
       - name: Start API server
         run: npm start
