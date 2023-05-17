@@ -24,8 +24,7 @@ jobs:
         run: npm install
 
       - name: Set environment variables
-        run: |
-          echo "DB_URI=${{ secrets.DB_URI }}" >> .env
+        run: echo "DB_URI=${{ secrets.DB_URI }}" >> .env
 
       - name: Start API server
         run: npm start
