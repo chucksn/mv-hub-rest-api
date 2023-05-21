@@ -4,7 +4,8 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const app = express();
 const port = process.env.PORT;
-const userSignInRoute = require("./routes/user-signIn-route");
+const authRoute = require("./routes/auth-route");
+const watchlistRoute = require("./routes/watchlist-routes");
 
 mongoose
   .connect(process.env.DB_URI)
@@ -17,4 +18,5 @@ mongoose
 app.use(express.json());
 app.use(cors());
 
-app.use("/api/v1/user", userSignInRoute);
+app.use("/api/v1/user/auth", authRoute);
+app.use("/api/v1/watchlist", watchlistRoute);
