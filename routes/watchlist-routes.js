@@ -24,16 +24,17 @@ router.put("/", (req, res) => {
   const newWatchlist = req.body;
   const newWatchlist_id = newWatchlist.id;
   User.findOne({ _id: userId, "watchlist.id": newWatchlist_id })
-    .then((watchlist_id) => {
-      if (watchlist_id) {
+    .then((user) => {
+      if (user) {
         throw "Already added to watchlist";
       } else {
         User.updateOne({ _id: userId }, { $push: { watchlist: newWatchlist } })
           .then((result) => {
             if (result.modifiedCount) {
               res.status(200).json({ message: "New item added to watchlist" });
+            } else {
+              res.status(500).json({ error: "Internal server error" });
             }
-            if (!result.matchedCount) throw "User does not exist";
           })
           .catch((err) => res.status(400).json({ error: err }));
       }
